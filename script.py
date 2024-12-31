@@ -7,7 +7,7 @@ def calculate_scores(data):
 
     for user_id, group in data.groupby("user_id"):
         # Scoring 1: Less interacted videos - Only for videos watched more than 90%
-        group["completion_percentage"] = (group["playback_minutes"] * group["speed"]) / group["duration"] * 100
+        group["completion_percentage"] = (group["actual_hours"] * group["speed"]) / group["duration"] * 100
         filtered_group = group[group["completion_percentage"] >= 90]
 
         less_interacted_videos = filtered_group[(filtered_group["_pause"] + filtered_group["_seek"]) < 3]  # Corrected to refer to _pause and _seek columns
@@ -69,7 +69,7 @@ if uploaded_file:
     st.write(data.head())
     
     # Ensure necessary columns are present
-    required_columns = ["user_id", "_pause", "_seek", "_pb_type", "playback_minutes", "speed", "duration", "start_time", "end_time", "lesson_id"]
+    required_columns = ["user_id", "_pause", "_seek", "_pb_type", "actual_hours", "speed", "duration", "start_time", "end_time", "lesson_id"]
     if all(col in data.columns for col in required_columns):
         # Calculate Scores
         scores = calculate_scores(data)
