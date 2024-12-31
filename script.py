@@ -7,7 +7,7 @@ def calculate_scores(data):
 
     for user_id, group in data.groupby("user_id"):
         # Scoring 1: Less interacted videos
-        less_interacted_videos = group[(_pause + _seek) < 3]  # Changed to _pause and _seek
+        less_interacted_videos = group[(group["_pause"] + group["_seek"]) < 3]  # Corrected to refer to _pause and _seek columns
         interaction_percentage = len(less_interacted_videos) / len(group) * 100
         interaction_score = 10 if interaction_percentage >= 80 else 8 if interaction_percentage >= 50 else 5
 
