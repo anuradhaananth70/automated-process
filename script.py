@@ -55,15 +55,14 @@ st.title("User Video Scoring System")
 uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
 
 if uploaded_file:
+    # Load the dataset
     data = pd.read_csv(uploaded_file)
-    st.write("Uploaded Data:")
-    st.dataframe(data)
-    
-    # Debugging column names
-    st.write("Dataset Columns:", data.columns.tolist())
-    
-    # Clean column names
+
+    # Clean column names to strip any extra spaces
     data.columns = data.columns.str.strip()
+
+    # Print column names to debug
+    st.write("Dataset Columns:", data.columns.tolist())
     
     # Ensure necessary columns are present
     required_columns = ["user_id", "_pause", "_seek", "_pb_type", "playback_minutes", "speed", "duration", "start_time", "end_time", "lesson_id"]
