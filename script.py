@@ -64,6 +64,10 @@ if uploaded_file:
     # Print column names to debug
     st.write("Dataset Columns:", data.columns.tolist())
     
+    # Show the first few rows of the data for further debugging
+    st.write("Preview of the Data (First 5 Rows):")
+    st.write(data.head())
+    
     # Ensure necessary columns are present
     required_columns = ["user_id", "_pause", "_seek", "_pb_type", "playback_minutes", "speed", "duration", "start_time", "end_time", "lesson_id"]
     if all(col in data.columns for col in required_columns):
@@ -76,4 +80,5 @@ if uploaded_file:
         csv = scores.to_csv(index=False)
         st.download_button("Download Scored Data", csv, "scores.csv", "text/csv")
     else:
-        st.error(f"Missing columns. Ensure the dataset includes: {', '.join(required_columns)}")
+        missing_cols = [col for col in required_columns if col not in data.columns]
+        st.error(f"Missing columns. Ensure the dataset includes: {', '.join(missing_cols)}")
