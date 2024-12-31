@@ -5,16 +5,42 @@ import pandas as pd
 def calculate_scores(data):
     results = []
 
+    # Module videos information (total videos per module)
+    module_videos = {
+        'Anatomy': 11,
+        'Biochemistry': 14,
+        'Physiology': 12,
+        'Pharmacology': 14,
+        'Microbiology': 14,
+        'Pathology': 15,
+        'Community Medicine': 18,
+        'Forensic Medicine': 12,
+        'Ophthalmology': 11,
+        'ENT': 17,
+        'Anaesthesia': 7,
+        'Dermatology': 6,
+        'Psychiatry': 7,
+        'Radiology': 8,
+        'Medicine': 30,
+        'Surgery': 16,
+        'Orthopaedics': 13,
+        'Paediatrics': 8,
+        'Obstetrics & Gynaecology': 19,
+        'Integrated Medicine Optional': 8
+    }
+
     for user_id, group in data.groupby("user_id"):
         # Scoring 1: Less interacted videos - Only for videos watched more than 90%
-        # Prevent division by zero if duration is zero
         group["completion_percentage"] = group.apply(
             lambda row: (row["actual_hours"] * row["speed"]) / row["duration"] * 100 if row["duration"] != 0 else 0,
             axis=1
         )
+
+        # Filter videos watched at least 90%
         filtered_group = group[group["completion_percentage"] >= 90]
 
-        less_interacted_videos = filtered_group[(filtered_group["_pause"] + filtered_group["_seek"]) < 3]  # Corrected to refer to _pause and _seek columns
+        # Filter videos with less than 3 interactions (pause + seek)
+        less_interacted_videos = filtered_group[(filtered_group["_pause"] + filtered_group["_seek"]) < 3]
         interaction_percentage = len(less_interacted_videos) / len(filtered_group) * 100 if len(filtered_group) > 0 else 0
         interaction_score = 10 if interaction_percentage >= 80 else 8 if interaction_percentage >= 50 else 5
 
@@ -41,8 +67,14 @@ def calculate_scores(data):
             if session_count > 5:
                 session_score -= 1  # Reduce score for excessive sessions
 
-        # Append results
+        # Calculate completion percentage per module
+        group['module_videos_count'] = group['topic_title'].apply(lambda x: module_videos.get(x, 0))
+        group['completion_percentage_per_module'] = (group['completion_percentage'] / group['module_videos_count']) * 100
+        group = group[group['completion_percentage_per_module'] >= 70]  # Filter users who watched at least 70% of the module
+
+        # Calculate total score
         total_score = (interaction_score + offline_score + session_score) / 3
+
         results.append({
             "user_id": user_id,
             "interaction_score": interaction_score,
@@ -73,7 +105,7 @@ if uploaded_file:
     st.write(data.head())
     
     # Ensure necessary columns are present
-    required_columns = ["user_id", "_pause", "_seek", "_pb_type", "actual_hours", "speed", "duration", "start_time", "end_time", "lesson_id"]
+    required_columns = ["user_id", "_pause", "_seek", "_pb_type", "actual_hours", "speed", "duration", "start_time", "end_time", "lesson_id", "topic_title"]
     if all(col in data.columns for col in required_columns):
         # Calculate Scores
         scores = calculate_scores(data)
