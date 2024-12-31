@@ -7,16 +7,20 @@ def calculate_scores(data):
 
     for user_id, group in data.groupby("user_id"):
         # Scoring 1: Less interacted videos - Only for videos watched more than 90%
-        group["completion_percentage"] = (group["actual_hours"] * group["speed"]) / group["duration"] * 100
+        # Prevent division by zero if duration is zero
+        group["completion_percentage"] = group.apply(
+            lambda row: (row["actual_hours"] * row["speed"]) / row["duration"] * 100 if row["duration"] != 0 else 0,
+            axis=1
+        )
         filtered_group = group[group["completion_percentage"] >= 90]
 
         less_interacted_videos = filtered_group[(filtered_group["_pause"] + filtered_group["_seek"]) < 3]  # Corrected to refer to _pause and _seek columns
-        interaction_percentage = len(less_interacted_videos) / len(filtered_group) * 100
+        interaction_percentage = len(less_interacted_videos) / len(filtered_group) * 100 if len(filtered_group) > 0 else 0
         interaction_score = 10 if interaction_percentage >= 80 else 8 if interaction_percentage >= 50 else 5
 
         # Scoring 2: Videos watched offline
         offline_videos = group[group["_pb_type"] == 2]
-        offline_percentage = len(offline_videos) / len(group) * 100
+        offline_percentage = len(offline_videos) / len(group) * 100 if len(group) > 0 else 0
         offline_score = 10 if offline_percentage >= 90 else 9 if offline_percentage >= 50 else 5
 
         # Scoring 3: Total sessions per lesson_id
