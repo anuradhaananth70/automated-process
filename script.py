@@ -96,9 +96,6 @@ if uploaded_file:
 
     # Clean column names to strip any extra spaces
     data.columns = data.columns.str.strip()
-
-    # Print column names to debug
-    st.write("Dataset Columns:", data.columns.tolist())
     
     # Show the first few rows of the data for further debugging
     st.write("Preview of the Data (First 5 Rows):")
