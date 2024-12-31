@@ -18,12 +18,19 @@ def calculate_scores(data):
 
         # Scoring 3: Total sessions per lesson_id
         session_score = 10
+        group["start_time"] = pd.to_datetime(group["start_time"], errors='coerce')  # Convert start_time to datetime
+        group["end_time"] = pd.to_datetime(group["end_time"], errors='coerce')      # Convert end_time to datetime
+
         for lesson_id, lesson_group in group.groupby("lesson_id"):
             lesson_group = lesson_group.sort_values("start_time")
             end_times = lesson_group["end_time"].shift(1)
             start_times = lesson_group["start_time"]
             session_gaps = start_times - end_times
-            session_count = (session_gaps > 60 * 1000).sum() + 1  # Count sessions (threshold 1 minute in ms)
+
+            # Filter out non-valid session gaps (NaT)
+            session_gaps = session_gaps.dropna()
+
+            session_count = (session_gaps > pd.Timedelta(minutes=1)).sum() + 1  # Count sessions (threshold 1 minute)
             if session_count > 5:
                 session_score -= 1  # Reduce score for excessive sessions
 
