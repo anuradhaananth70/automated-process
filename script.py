@@ -36,18 +36,29 @@ def calculate_scores(data):
             axis=1
         )
 
-        # Filter videos watched at least 90%
         filtered_group = group[group["completion_percentage"] >= 90]
-
-        # Filter videos with less than 3 interactions (pause + seek)
         less_interacted_videos = filtered_group[(filtered_group["_pause"] + filtered_group["_seek"]) < 3]
         interaction_percentage = len(less_interacted_videos) / len(filtered_group) * 100 if len(filtered_group) > 0 else 0
-        interaction_score = 10 if interaction_percentage >= 80 else 8 if interaction_percentage >= 50 else 5
+        
+        # Update interaction score logic
+        if interaction_percentage > 90:
+            interaction_score = 10
+        elif 75 <= interaction_percentage <= 90:
+            interaction_score = 5
+        else:
+            interaction_score = 0
 
         # Scoring 2: Videos watched offline
         offline_videos = group[group["_pb_type"] == 2]
         offline_percentage = len(offline_videos) / len(group) * 100 if len(group) > 0 else 0
-        offline_score = 10 if offline_percentage >= 90 else 9 if offline_percentage >= 50 else 5
+
+        # Update offline score logic
+        if offline_percentage > 90:
+            offline_score = 10
+        elif 75 <= offline_percentage <= 90:
+            offline_score = 5
+        else:
+            offline_score = 0
 
         # Scoring 3: Total sessions per lesson_id
         session_score = 10
@@ -60,21 +71,13 @@ def calculate_scores(data):
             start_times = lesson_group["start_time"]
             session_gaps = start_times - end_times
 
-            # Filter out non-valid session gaps (NaT)
             session_gaps = session_gaps.dropna()
-
             session_count = (session_gaps > pd.Timedelta(minutes=1)).sum() + 1  # Count sessions (threshold 1 minute)
             if session_count > 5:
                 session_score -= 1  # Reduce score for excessive sessions
 
-        # Calculate completion percentage per module
-        group['module_videos_count'] = group['topic_title'].apply(lambda x: module_videos.get(x, 0))
-        group['completion_percentage_per_module'] = (group['completion_percentage'] / group['module_videos_count']) * 100
-        group = group[group['completion_percentage_per_module'] >= 70]  # Filter users who watched at least 70% of the module
-
-        # Calculate total score
-        total_score = (interaction_score + offline_score + session_score) / 3
-
+        # Append results
+        total_score = interaction_score + offline_score + session_score
         results.append({
             "user_id": user_id,
             "interaction_score": interaction_score,
